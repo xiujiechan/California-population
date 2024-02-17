@@ -73,7 +73,7 @@ x, y = m(-122.3, 47.6)
 plt.plot(x, y, 'ok', markersize=5)
 plt.text(x, y, ' Seattle', fontsize=12);
 
-#圓柱投影出不來
+#圓柱投影
 from itertools import chain
 
 def draw_map(m, scale=0.2):
