@@ -1,0 +1,204 @@
+# -*- coding: utf-8 -*-
+"""
+Created on Sat Feb  3 16:15:09 2024
+
+@author:Xiujie Chan
+"""
+from mpl_toolkits.basemap import Basemap
+import numpy as np
+import matplotlib.pyplot as plt
+#!pip install cartopy
+import cartopy.crs as ccrs
+import cartopy.feature as cfeature
+import matplotlib.pyplot as plt
+
+# Define the map projection
+ax = plt.axes(projection=ccrs.Orthographic(central_longitude=-105, central_latitude=40))
+
+# Add coastlines and continents
+ax.add_feature(cfeature.COASTLINE)
+ax.add_feature(cfeature.LAND, color='coral')
+
+# Add parallels and meridians
+ax.gridlines(draw_labels=True)
+
+# Add map boundary
+ax.set_global()
+
+# Add title and show plot
+plt.title("Full Disk Orthographic Projection")
+plt.show()
+
+from mpl_toolkits.basemap import Basemap
+import matplotlib.pyplot as plt
+import numpy as np
+# setup Lambert Conformal basemap.
+m = Basemap(width=12000000,height=9000000,projection='lcc',
+            resolution='c',lat_1=45.,lat_2=55,lat_0=50,lon_0=-107.)
+# draw a boundary around the map, fill the background.
+# this background will end up being the ocean color, since
+# the continents will be drawn on top.
+m.drawmapboundary(fill_color='aqua')
+# fill continents, set lake color same as ocean color.
+m.fillcontinents(color='coral',lake_color='aqua')
+# draw parallels and meridians.
+# label parallels on right and top
+# meridians on bottom and left
+parallels = np.arange(0.,81,10.)
+# labels = [left,right,top,bottom]
+m.drawparallels(parallels,labels=[False,True,True,False])
+meridians = np.arange(10.,351.,20.)
+m.drawmeridians(meridians,labels=[True,False,False,True])
+# plot blue dot on Boulder, colorado and label it as such.
+lon, lat =  -122.3, 47.6#-104.237, 40.125 # Location of Boulder
+# convert to map projection coords.
+# Note that lon,lat can be scalars, lists or numpy arrays.
+xpt,ypt = m(lon,lat)
+# convert back to lat/lon
+lonpt, latpt = m(xpt,ypt,inverse=True)
+m.plot(xpt,ypt,'bo')  # plot a blue dot there
+# put some text next to the dot, offset a little bit
+# (the offset is in map projection coordinates)
+plt.text(xpt+100000,ypt+100000,' Seattles (%5.1fW,%3.1fN)' % (lonpt,latpt))
+plt.show()
+
+fig = plt.figure(figsize=(8, 8))
+m = Basemap(projection='lcc', resolution=None,
+            width=8E6, height=8E6,
+            lat_0=45, lon_0=-100,)
+m.etopo(scale=0.5, alpha=0.5)
+
+# Map (long, lat) to (x, y) for plotting
+x, y = m(-122.3, 47.6)
+plt.plot(x, y, 'ok', markersize=5)
+plt.text(x, y, ' Seattle', fontsize=12);
+
+#圓柱投影出不來
+from itertools import chain
+
+def draw_map(m, scale=0.2):
+    # draw a shaded-relief image
+    m.shadedrelief(scale=scale)
+
+    # lats and longs are returned as a dictionary
+    lats = m.drawparallels(np.linspace(-90, 90, 13))
+    lons = m.drawmeridians(np.linspace(-180, 180, 13))
+
+    # keys contain the plt.Line2D instances
+    lat_lines = chain(*(tup[1][0] for tup in lats.items()))
+    lon_lines = chain(*(tup[1][0] for tup in lons.items()))
+    all_lines = chain(lat_lines, lon_lines)
+    
+    # cycle through these lines and set the desired style
+    for line in all_lines:
+        line.set(linestyle='-', alpha=0.3, color='w')        
+plt.show()
+
+#偽圓柱
+fig = plt.figure(figsize=(8, 6), edgecolor='w')
+m = Basemap(projection='moll', resolution=None,
+            lat_0=0, lon_0=0)
+draw_map(m)
+#透視投影
+fig = plt.figure(figsize=(8, 8))
+m = Basemap(projection='ortho', resolution=None,
+            lat_0=50, lon_0=0)
+draw_map(m);
+
+#圓錐投影
+fig = plt.figure(figsize=(8, 8))
+m = Basemap(projection='lcc', resolution=None,
+            lon_0=0, lat_0=50, lat_1=45, lat_2=55,
+            width=1.6E7, height=1.2E7)
+draw_map(m)
+
+# 海岸線
+fig, ax = plt.subplots(1, 2, figsize=(12, 8))
+from mpl_toolkits.basemap import Basemap
+for i, res in enumerate(['l', 'h']):
+    m = Basemap(projection='gnom', lat_0=57.3, lon_0=-6.2,
+                width=90000, height=120000, resolution=res, ax=ax[i])
+    m.fillcontinents(color="#FFDDCC", lake_color='#DDEEFF')
+    m.drawmapboundary(fill_color="#DDEEFF")
+    m.drawcoastlines()
+    ax[i].set_title("resolution='{0}'".format(res));
+    
+#加利福尼亞例子
+import pandas as pd
+cities = pd.read_csv('california_cities.csv')
+
+# Extract the data we're interested in
+lat = cities['latd'].values
+lon = cities['longd'].values
+population = cities['population_total'].values
+area = cities['area_total_km2'].values
+
+# 1. Draw the map background
+fig = plt.figure(figsize=(8, 8))
+m = Basemap(projection='lcc', resolution='h',
+            lat_0=37.5, lon_0=-119,
+            width=1E6, height=1.2E6)
+m.shadedrelief()
+m.drawcoastlines(color='gray')
+m.drawcountries(color='gray')
+m.drawstates(color='gray')
+
+# 2. scatter city data, with color reflecting population
+# and size reflecting area
+m.scatter(lon, lat, latlon=True,
+          c=np.log10(population), s=area,
+          cmap='Reds', alpha=0.5)
+
+# 3. create colorbar and legend
+plt.colorbar(label=r'$\log_{10}({\rm population})$')
+plt.clim(3, 7)
+
+# make legend with dummy points
+for a in [100, 300, 500]:
+    plt.scatter([], [], c='k', alpha=0.5, s=a,
+                label=str(a) + ' km$^2$')
+plt.legend(scatterpoints=1, frameon=False,
+           labelspacing=1, loc='lower left');
+
+#curl -O http://data.giss.nasa.gov/pub/gistemp/gistemp250.nc.gz
+#gunzip gistemp250.nc.gz
+
+import gzip
+import shutil
+input_file ='gistemp250.nc.gz'
+output_file ='gistemp250.nc'
+with gzip.open(input_file,'rb') as f_in:
+    with open(output_file,'wb') as f_out:
+        shutil.copyfileobj(f_in,f_out)
+print("文件解壓成功")
+
+from netCDF4 import Dataset
+data = Dataset('gistemp250.nc')
+
+from netCDF4 import date2index
+from datetime import datetime
+timeindex = date2index(datetime(2014, 1, 15),
+                       data.variables['time'])
+
+from netCDF4 import date2index
+from datetime import datetime
+timeindex = date2index(datetime(2014, 1, 15),
+                       data.variables['time'])
+
+from netCDF4 import date2index
+from datetime import datetime
+timeindex = date2index(datetime(2014, 1, 15),
+                       data.variables['time'])
+
+fig = plt.figure(figsize=(10, 8))
+m = Basemap(projection='lcc', resolution='c',
+            width=8E6, height=8E6,
+            lat_0=45, lon_0=-100,)
+m.shadedrelief(scale=0.5)
+m.pcolormesh(lon, lat, temp_anomaly,
+             latlon=True, cmap='RdBu_r')
+plt.clim(-8, 8)
+m.drawcoastlines(color='lightgray')
+
+plt.title('January 2014 Temperature Anomaly')
+plt.colorbar(label='temperature anomaly (°C)');
